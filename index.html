@@ -2,13 +2,17 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>학기말 영화 상영 예매</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--btn:#111827;--btn-ink:#fff;--ok:#047857;--bad:#b91c1c;--thumb:#f3f4f6}
 @media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--btn:#e7e8ea;--btn-ink:#101114;--ok:#34d399;--bad:#f87171;--thumb:#1b1d22}}
 *{box-sizing:border-box}
+[hidden]{display:none!important} /* .bar 의 display:flex 가 hidden 속성을 덮어쓰던 문제 해결 */
+button,input,textarea{touch-action:manipulation}
+button,input{min-height:44px}
+main{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif}
 main{max-width:720px;margin:0 auto;padding:56px 24px 80px}
 h1{font-size:1.5rem;font-weight:700;margin:0 0 6px}
@@ -33,7 +37,17 @@ ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 .act{text-align:right;display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex:none}
 .seats{font-size:.85rem;color:var(--mut)}
 .row.mine .seats{color:var(--ok);font-weight:500}
-@media (max-width:520px){.row{flex-wrap:wrap}.act{width:100%;flex-direction:row;justify-content:space-between;align-items:center}}
+@media (max-width:520px){
+  main{padding:32px 16px 56px}
+  h1{font-size:1.35rem}
+  .bar input{flex:1 1 100%;width:100%}
+  #loginForm button{flex:1 1 100%}
+  .row{flex-wrap:wrap;gap:14px;padding:20px 0}
+  .thumb{width:64px}
+  .info{flex:1 1 0}
+  .act{width:100%;flex-direction:column;align-items:stretch;text-align:left;gap:8px}
+  .act button{width:100%}
+}
 </style>
 </head>
 <body>
@@ -57,7 +71,7 @@ ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 </main>
 
 <script>
-const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // ← 배포한 Worker 주소로 교체
+const API = "https://movie-booking.계정명.workers.dev"; // ← 배포한 Worker 주소로 교체
 const TEST_MODE = true; // 로그인 없이 테스트 (운영 때는 false)
 const newId = () => "test-" + Math.random().toString(36).slice(2, 7);
 let testUser = localStorage.getItem("testUser") || newId();
