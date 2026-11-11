@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>학기말 영화 상영 예매</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--btn:#111827;--btn-ink:#fff;--ok:#047857;--bad:#b91c1c;--thumb:#f3f4f6}
+@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--btn:#e7e8ea;--btn-ink:#101114;--ok:#34d399;--bad:#f87171;--thumb:#1b1d22}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:56px 24px 80px}
+h1{font-size:1.5rem;font-weight:700;margin:0 0 6px}
+.mut{color:var(--mut)}
+header p{margin:0 0 32px}
+input,button{font:inherit;border-radius:6px}
+input{padding:9px 12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:140px}
+button{padding:9px 16px;border:1px solid var(--btn);background:var(--btn);color:var(--btn-ink);cursor:pointer;font-weight:500}
+button.line{background:none;color:var(--ink);border-color:var(--line)}
+button.bad{background:none;color:var(--bad);border-color:var(--bad)}
+button:disabled{background:none;color:var(--mut);border-color:var(--line);cursor:not-allowed}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+#msg{min-height:1.7em;margin:0 0 24px;color:var(--mut);font-size:.9rem}
+ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.row{display:flex;gap:20px;align-items:flex-start;padding:24px 0;border-bottom:1px solid var(--line)}
+.thumb{width:84px;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--thumb);flex:none}
+.info{flex:1;min-width:0}
+.info h2{font-size:1.1rem;font-weight:700;margin:0}
+.info p{margin:2px 0 0;font-size:.9rem}
+.desc{margin-top:8px!important;color:var(--mut)}
+.act{text-align:right;display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex:none}
+.seats{font-size:.85rem;color:var(--mut)}
+.row.mine .seats{color:var(--ok);font-weight:500}
+@media (max-width:520px){.row{flex-wrap:wrap}.act{width:100%;flex-direction:row;justify-content:space-between;align-items:center}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>학기말 영화 상영</h1>
+    <p class="mut">보고 싶은 영화를 한 편 선택해 예매하세요. 예매 후에도 다른 영화로 바꿀 수 있습니다.</p>
+  </header>
+
+  <form class="bar" id="loginForm">
+    <input id="sid" placeholder="학번" inputmode="numeric" autocomplete="username" aria-label="학번" required>
+    <input id="code" placeholder="개인 코드" autocomplete="current-password" aria-label="개인 코드" required>
+    <button>로그인</button>
+  </form>
+  <div class="bar" id="userBar" hidden>
+    <strong id="who"></strong>
+    <button class="line" id="logoutBtn" type="button">로그아웃</button>
+  </div>
+  <p id="msg" role="status"></p>
+  <ul id="list"></ul>
+</main>
+
+<script>
+const API = "https://movie-booking.계정명.workers.dev"; // ← 배포한 Worker 주소로 교체
+const TEST_MODE = true; // 로그인 없이 테스트 (운영 때는 false)
+const newId = () => "test-" + Math.random().toString(36).slice(2, 7);
+let testUser = localStorage.getItem("testUser") || newId();
+localStorage.setItem("testUser", testUser);
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let token = TEST_MODE ? "test" : localStorage.getItem("token");
+
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}), ...(TEST_MODE ? { "X-Test-User": testUser } : {}) } });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401 && token && path !== "/api/login") logout("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+  if (!r.ok) throw new Error(d.error || "오류가 발생했습니다.");
+  return d;
+}
+const say = (t) => ($("#msg").textContent = t);
+
+function showUser() {
+  $("#loginForm").hidden = !!token;
+  $("#userBar").hidden = !token;
+  $("#who").textContent = TEST_MODE ? "테스트 학생 " + testUser : (localStorage.getItem("name") || "") + " 학생";
+  $("#logoutBtn").textContent = TEST_MODE ? "다른 테스트 학생으로 전환" : "로그아웃";
+  if (TEST_MODE) say("테스트 모드입니다. 로그인 없이 예매를 시험할 수 있습니다.");
+  else if (!token) say("로그인하면 예매할 수 있습니다.");
+}
+function logout(m = "") { ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; showUser(); load(); if (m) say(m); }
+
+async function load() {
+  try {
+    const { screenings, mine } = await api("/api/screenings");
+    $("#list").innerHTML = screenings.length ? screenings.map((s) => {
+      const isMine = mine === s.id, full = s.remaining <= 0 && !isMine;
+      const btn = !token ? "" : isMine
+        ? `<button class="bad" onclick="cancelRes()">예매 취소</button>`
+        : `<button ${full ? "disabled" : ""} onclick="reserve(${s.id})">${full ? "매진" : mine ? "이 영화로 변경" : "예매하기"}</button>`;
+      return `<li class="row ${isMine ? "mine" : ""}">
+        ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="${esc(s.title)} 포스터" loading="lazy">` : `<div class="thumb"></div>`}
+        <div class="info"><h2>${esc(s.title)}</h2>
+          <p class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", "))}</p>
+          <p class="desc">${esc(s.description)}</p></div>
+        <div class="act"><span class="seats">${isMine ? "예매 완료, " : ""}남은 자리 ${Math.max(s.remaining, 0)}/${s.capacity}</span>${btn}</div></li>`;
+    }).join("") : `<li class="row mut">아직 등록된 영화가 없습니다. 곧 공개됩니다.</li>`;
+  } catch (e) { say(e.message); }
+}
+async function reserve(id) {
+  try { await api("/api/reserve", { method: "POST", body: JSON.stringify({ screeningId: id }) }); say("예매가 완료되었습니다."); } catch (e) { say(e.message); }
+  load();
+}
+async function cancelRes() {
+  try { await api("/api/reserve", { method: "DELETE" }); say("예매를 취소했습니다."); } catch (e) { say(e.message); }
+  load();
+}
+$("#loginForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const d = await api("/api/login", { method: "POST", body: JSON.stringify({ studentId: $("#sid").value, code: $("#code").value }) });
+    token = d.token; localStorage.setItem("token", token); localStorage.setItem("name", d.name);
+    showUser(); say(""); load();
+  } catch (err) { say(err.message); }
+};
+$("#logoutBtn").onclick = () => {
+  if (!TEST_MODE) return logout();
+  testUser = newId(); localStorage.setItem("testUser", testUser); showUser(); load(); // 새 학생인 척 전환
+};
+showUser(); load(); setInterval(load, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>관리자 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--btn:#111827;--btn-ink:#fff;--bad:#b91c1c;--thumb:#f3f4f6}
+@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--btn:#e7e8ea;--btn-ink:#101114;--bad:#f87171;--thumb:#1b1d22}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif}
+main{max-width:880px;margin:0 auto;padding:56px 24px 80px}
+h1{font-size:1.5rem;font-weight:700;margin:0 0 6px}
+h2{font-size:1.05rem;font-weight:700;margin:40px 0 12px}
+.mut{color:var(--mut)}
+input,textarea,button{font:inherit;border-radius:6px}
+input,textarea{padding:9px 12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+label{display:block;font-size:.85rem;color:var(--mut);margin-bottom:4px}
+button{padding:8px 14px;border:1px solid var(--btn);background:var(--btn);color:var(--btn-ink);cursor:pointer;font-weight:500}
+button.line{background:none;color:var(--ink);border-color:var(--line)}
+button.bad{background:none;color:var(--bad);border-color:var(--bad)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0}
+.bar input{width:220px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px}
+.full{grid-column:1/-1}
+#msg{min-height:1.7em;color:var(--mut);font-size:.9rem}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th{text-align:left;font-weight:500;color:var(--mut);padding:8px 8px 8px 0;border-bottom:1px solid var(--line)}
+td{padding:12px 8px 12px 0;border-bottom:1px solid var(--line);vertical-align:middle}
+.thumb{width:36px;aspect-ratio:2/3;object-fit:cover;border-radius:3px;background:var(--thumb);display:block}
+td.act{white-space:nowrap;text-align:right}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+  <h1>관리자 대시보드</h1>
+  <p class="mut">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
+
+  <form class="bar" id="loginForm">
+    <input id="pw" type="password" placeholder="관리자 비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" required>
+    <button>로그인</button>
+  </form>
+  <p id="msg" role="status"></p>
+
+  <div id="panel" hidden>
+    <div class="bar"><button class="line" id="logoutBtn" type="button">로그아웃</button><a href="index.html">예매 페이지 보기</a></div>
+
+    <h2 id="formTitle">영화 등록</h2>
+    <form id="f">
+      <div class="grid">
+        <div><label for="title">영화 제목</label><input id="title" required maxlength="100"></div>
+        <div><label for="room">반 이름(상영 장소)</label><input id="room" placeholder="예: 2반 교실" maxlength="50"></div>
+        <div><label for="start_at">상영 시간</label><input id="start_at" placeholder="예: 12/18 5교시" maxlength="50"></div>
+        <div><label for="capacity">정원</label><input id="capacity" type="number" min="1" max="500" value="30" required></div>
+        <div class="full"><label for="poster_url">이미지 링크 (https://로 시작)</label><input id="poster_url" type="url" placeholder="https://..."></div>
+        <div class="full"><label for="description">한 줄 소개</label><textarea id="description" rows="2" maxlength="500"></textarea></div>
+      </div>
+      <div class="bar"><button id="saveBtn">등록</button><button class="line" id="resetBtn" type="button" hidden>수정 취소</button></div>
+    </form>
+
+    <h2>등록된 영화</h2>
+    <div class="scroll"><table>
+      <thead><tr><th></th><th>제목</th><th>반</th><th>시간</th><th>예매/정원</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="bar"><button class="line" id="csvBtn" type="button">예매 명단 CSV 내려받기</button></div>
+  </div>
+</main>
+
+<script>
+const API = "https://movie-booking.계정명.workers.dev"; // ← index.html과 같은 Worker 주소
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const FIELDS = ["title", "room", "start_at", "capacity", "poster_url", "description"];
+let pw = sessionStorage.getItem("adminPw") || "", data = [], editId = null; // 비밀번호는 탭을 닫으면 사라집니다
+const say = (t) => ($("#msg").textContent = t);
+
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json", "X-Admin-Password": pw } });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || "오류가 발생했습니다.");
+  return d;
+}
+function show(on) { $("#panel").hidden = !on; $("#loginForm").hidden = on; }
+function logout(m = "") { pw = ""; sessionStorage.removeItem("adminPw"); show(false); say(m); }
+
+async function load() {
+  try {
+    data = (await api("/api/admin/screenings")).screenings;
+    show(true); say("");
+    $("#rows").innerHTML = data.length ? data.map((s, i) => `<tr>
+      <td>${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="">` : `<span class="thumb"></span>`}</td>
+      <td>${esc(s.title)}</td><td>${esc(s.room)}</td><td>${esc(s.start_at)}</td><td>${s.reserved}/${s.capacity}</td>
+      <td class="act"><button class="line" onclick="edit(${i})">수정</button> <button class="bad" onclick="del(${i})">삭제</button></td></tr>`).join("")
+      : `<tr><td colspan="6" class="mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</td></tr>`;
+  } catch (e) { logout(e.message); }
+}
+function resetForm() { editId = null; $("#f").reset(); $("#capacity").value = 30; $("#formTitle").textContent = "영화 등록"; $("#saveBtn").textContent = "등록"; $("#resetBtn").hidden = true; }
+function edit(i) {
+  const s = data[i]; editId = s.id;
+  FIELDS.forEach((k) => ($("#" + k).value = s[k] ?? ""));
+  $("#formTitle").textContent = "영화 수정"; $("#saveBtn").textContent = "저장"; $("#resetBtn").hidden = false;
+  scrollTo({ top: 0, behavior: "smooth" });
+}
+async function del(i) {
+  const s = data[i];
+  if (!confirm(`"${s.title}"을(를) 삭제할까요? 이 영화의 예매 ${s.reserved}건도 함께 삭제됩니다.`)) return;
+  try { await api("/api/admin/screenings/" + s.id, { method: "DELETE" }); say("삭제했습니다."); } catch (e) { say(e.message); }
+  load();
+}
+$("#f").onsubmit = async (e) => {
+  e.preventDefault();
+  const body = JSON.stringify(Object.fromEntries(FIELDS.map((k) => [k, $("#" + k).value])));
+  try {
+    await api(editId ? "/api/admin/screenings/" + editId : "/api/admin/screenings", { method: editId ? "PUT" : "POST", body });
+    say(editId ? "수정했습니다." : "등록했습니다."); resetForm(); load();
+  } catch (err) { say(err.message); }
+};
+$("#resetBtn").onclick = resetForm;
+$("#csvBtn").onclick = async () => {
+  try {
+    const { roster } = await api("/api/admin/roster");
+    const t = Object.fromEntries(data.map((s) => [s.id, s]));
+    const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = "영화,반,학번,이름\n" + roster.map((r) => [t[r.screening_id]?.title, t[r.screening_id]?.room, r.student_id, r.name].map(q).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv" })); a.download = "예매명단.csv"; a.click();
+  } catch (e) { say(e.message); }
+};
+$("#loginForm").onsubmit = async (e) => {
+  e.preventDefault();
+  pw = $("#pw").value; $("#pw").value = "";
+  await load();
+  if (!$("#panel").hidden) sessionStorage.setItem("adminPw", pw);
+};
+$("#logoutBtn").onclick = () => logout();
+pw ? load() : show(false);
+</script>
+</body>
+</html>
