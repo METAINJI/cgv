@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>관리자 대시보드</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -10,6 +10,10 @@
 :root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--btn:#111827;--btn-ink:#fff;--bad:#b91c1c;--thumb:#f3f4f6}
 @media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--btn:#e7e8ea;--btn-ink:#101114;--bad:#f87171;--thumb:#1b1d22}}
 *{box-sizing:border-box}
+[hidden]{display:none!important} /* .bar 의 display:flex 가 hidden 속성을 덮어쓰던 문제 해결 */
+button,input,textarea{touch-action:manipulation}
+button,input{min-height:44px}
+main{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif}
 main{max-width:880px;margin:0 auto;padding:56px 24px 80px}
 h1{font-size:1.5rem;font-weight:700;margin:0 0 6px}
@@ -27,12 +31,20 @@ button.bad{background:none;color:var(--bad);border-color:var(--bad)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px}
 .full{grid-column:1/-1}
 #msg{min-height:1.7em;color:var(--mut);font-size:.9rem}
-table{width:100%;border-collapse:collapse;font-size:.92rem}
-th{text-align:left;font-weight:500;color:var(--mut);padding:8px 8px 8px 0;border-bottom:1px solid var(--line)}
-td{padding:12px 8px 12px 0;border-bottom:1px solid var(--line);vertical-align:middle}
-.thumb{width:36px;aspect-ratio:2/3;object-fit:cover;border-radius:3px;background:var(--thumb);display:block}
-td.act{white-space:nowrap;text-align:right}
-.scroll{overflow-x:auto}
+ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.item{display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.thumb{width:44px;aspect-ratio:2/3;object-fit:cover;border-radius:3px;background:var(--thumb);flex:none;display:block}
+.meta{flex:1;min-width:0;display:flex;flex-direction:column;font-size:.92rem}
+.meta strong{font-size:1rem;overflow-wrap:anywhere}
+.btns{display:flex;gap:8px;flex:none}
+@media (max-width:520px){
+  main{padding:32px 16px 56px}
+  .bar input{flex:1 1 100%;width:100%}
+  #loginForm button{flex:1 1 100%}
+  .item{flex-wrap:wrap}
+  .btns{width:100%}
+  .btns button{flex:1}
+}
 </style>
 </head>
 <body>
@@ -63,16 +75,13 @@ td.act{white-space:nowrap;text-align:right}
     </form>
 
     <h2>등록된 영화</h2>
-    <div class="scroll"><table>
-      <thead><tr><th></th><th>제목</th><th>반</th><th>시간</th><th>예매/정원</th><th></th></tr></thead>
-      <tbody id="rows"></tbody>
-    </table></div>
+    <ul id="rows"></ul>
     <div class="bar"><button class="line" id="csvBtn" type="button">예매 명단 CSV 내려받기</button></div>
   </div>
 </main>
 
 <script>
-const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // ← index.html과 같은 Worker 주소
+const API = "https://movie-booking.계정명.workers.dev"; // ← index.html과 같은 Worker 주소
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const FIELDS = ["title", "room", "start_at", "capacity", "poster_url", "description"];
@@ -92,11 +101,13 @@ async function load() {
   try {
     data = (await api("/api/admin/screenings")).screenings;
     show(true); say("");
-    $("#rows").innerHTML = data.length ? data.map((s, i) => `<tr>
-      <td>${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="">` : `<span class="thumb"></span>`}</td>
-      <td>${esc(s.title)}</td><td>${esc(s.room)}</td><td>${esc(s.start_at)}</td><td>${s.reserved}/${s.capacity}</td>
-      <td class="act"><button class="line" onclick="edit(${i})">수정</button> <button class="bad" onclick="del(${i})">삭제</button></td></tr>`).join("")
-      : `<tr><td colspan="6" class="mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</td></tr>`;
+    $("#rows").innerHTML = data.length ? data.map((s, i) => `<li class="item">
+      ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="">` : `<span class="thumb"></span>`}
+      <div class="meta"><strong>${esc(s.title)}</strong>
+        <span class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", ")) || "반, 시간 미정"}</span>
+        <span class="mut">예매 ${s.reserved}/${s.capacity}명</span></div>
+      <div class="btns"><button class="line" onclick="edit(${i})">수정</button><button class="bad" onclick="del(${i})">삭제</button></div></li>`).join("")
+      : `<li class="item mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</li>`;
   } catch (e) { logout(e.message); }
 }
 function resetForm() { editId = null; $("#f").reset(); $("#capacity").value = 30; $("#formTitle").textContent = "영화 등록"; $("#saveBtn").textContent = "등록"; $("#resetBtn").hidden = true; }
