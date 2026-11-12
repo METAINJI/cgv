@@ -6,72 +6,122 @@
 <title>학기말 영화 상영 예매</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--btn:#111827;--btn-ink:#fff;--ok:#047857;--bad:#b91c1c;--thumb:#f3f4f6}
-@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--btn:#e7e8ea;--btn-ink:#101114;--ok:#34d399;--bad:#f87171;--thumb:#1b1d22}}
+:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--ok:#047857;--bad:#b91c1c;--ph:#2a2d34;--w:clamp(168px,56vw,230px);--gap:16px}
+@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--ok:#34d399;--bad:#f87171;--ph:#1b1d22}}
 *{box-sizing:border-box}
-[hidden]{display:none!important} /* .bar 의 display:flex 가 hidden 속성을 덮어쓰던 문제 해결 */
-button,input,textarea{touch-action:manipulation}
-button,input{min-height:44px}
-main{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif}
-main{max-width:720px;margin:0 auto;padding:56px 24px 80px}
-h1{font-size:1.5rem;font-weight:700;margin:0 0 6px}
-.mut{color:var(--mut)}
-header p{margin:0 0 32px}
-input,button{font:inherit;border-radius:6px}
-input{padding:9px 12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:140px}
-button{padding:9px 16px;border:1px solid var(--btn);background:var(--btn);color:var(--btn-ink);cursor:pointer;font-weight:500}
-button.line{background:none;color:var(--ink);border-color:var(--line)}
-button.bad{background:none;color:var(--bad);border-color:var(--bad)}
-button:disabled{background:none;color:var(--mut);border-color:var(--line);cursor:not-allowed}
+main{max-width:960px;margin:0 auto;padding:32px max(24px,env(safe-area-inset-right)) 80px max(24px,env(safe-area-inset-left))}
+button,input{touch-action:manipulation}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
-#msg{min-height:1.7em;margin:0 0 24px;color:var(--mut);font-size:.9rem}
-ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-.row{display:flex;gap:20px;align-items:flex-start;padding:24px 0;border-bottom:1px solid var(--line)}
-.thumb{width:84px;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--thumb);flex:none}
-.info{flex:1;min-width:0}
-.info h2{font-size:1.1rem;font-weight:700;margin:0}
-.info p{margin:2px 0 0;font-size:.9rem}
-.desc{margin-top:8px!important;color:var(--mut)}
-.act{text-align:right;display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex:none}
-.seats{font-size:.85rem;color:var(--mut)}
-.row.mine .seats{color:var(--ok);font-weight:500}
-@media (max-width:520px){
-  main{padding:32px 16px 56px}
-  h1{font-size:1.35rem}
-  .bar input{flex:1 1 100%;width:100%}
-  #loginForm button{flex:1 1 100%}
-  .row{flex-wrap:wrap;gap:14px;padding:20px 0}
-  .thumb{width:64px}
-  .info{flex:1 1 0}
-  .act{width:100%;flex-direction:column;align-items:stretch;text-align:left;gap:8px}
-  .act button{width:100%}
+.mut{color:var(--mut)}
+
+/* 상단 */
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
+h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em}
+.who{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.txt{min-height:44px;padding:0 4px;border:0;background:none;color:var(--mut);font:inherit;font-size:.88rem;cursor:pointer}
+.txt:hover{color:var(--ink)}
+.sub{display:flex;justify-content:space-between;align-items:center;margin-top:16px;border-bottom:1px solid var(--line)}
+.cur{padding:10px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
+.lead{margin:20px 0 0;font-size:.9rem}
+
+/* 로그인 */
+.login{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin-top:20px}
+.login input{width:140px;padding:9px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
+.login .pill{margin:0}
+.login input:focus{outline:none;border-bottom-color:var(--ink)}
+.msg{min-height:1.6em;margin:20px 0 8px;text-align:center;color:var(--mut);font-size:.88rem}
+
+/* 버튼 */
+.pill{min-height:44px;margin-top:14px;padding:0 28px;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
+.pill.bad{border-color:var(--bad);color:var(--bad)}
+.pill:disabled{border-color:var(--line);color:var(--mut);cursor:not-allowed}
+@media (hover:hover){
+  .pill:hover:not(:disabled){background:var(--ink);color:var(--bg)}
+  .pill.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
 }
+
+/* 캐러셀 */
+.stage{position:relative}
+.track{position:relative;display:flex;align-items:flex-start;gap:var(--gap);margin:0;padding:0 0 4px;list-style:none;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none}
+.track::-webkit-scrollbar{display:none}
+.track::before,.track::after{content:"";flex:0 0 calc(50% - var(--w) / 2 - var(--gap))}
+.slide{flex:0 0 var(--w);scroll-snap-align:center;text-align:center}
+.poster{position:relative;display:block;width:100%;min-height:0;aspect-ratio:2/3;padding:0;border:0;border-radius:6px;overflow:hidden;background:var(--ph);cursor:pointer;opacity:.5;transform:scale(.84);transform-origin:50% 100%;transition:transform .25s,opacity .25s}
+.poster::after{content:"";position:absolute;inset:auto 0 0;height:45%;background:linear-gradient(transparent,rgba(0,0,0,.5))}
+.on .poster{opacity:1;transform:none;cursor:default}
+.poster img{display:block;width:100%;height:100%;object-fit:cover}
+.ph{display:flex;align-items:center;justify-content:center;height:100%;padding:16px;color:#e7e8ea;font-weight:700;font-size:1.1rem;text-align:center;word-break:keep-all}
+.no{position:absolute;left:14px;bottom:8px;z-index:1;color:#fff;font-size:3.5rem;font-weight:700;font-style:italic;line-height:1}
+.tag{position:absolute;top:10px;left:10px;z-index:1;padding:2px 8px;border-radius:3px;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:500;line-height:1.6}
+.tag.ok{background:var(--ok);color:var(--bg)}
+.t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:14px 0 0;color:var(--mut);font-size:1.05rem;font-weight:700;line-height:1.4;word-break:keep-all;transition:color .25s}
+.on .t{color:var(--ink)}
+.more{visibility:hidden;margin-top:6px;font-size:.88rem}
+.on .more{visibility:visible}
+.more p,.info p{margin:2px 0}
+.seat{color:var(--mut)}
+.seat.low{color:var(--bad)}
+.ok{color:var(--ok);font-weight:500}
+.desc{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:8px!important;color:var(--mut)}
+.v{display:inline-block;width:1px;height:.8em;margin:0 8px;background:var(--mut);opacity:.5;vertical-align:-1px}
+.arrow{position:absolute;z-index:2;top:calc(var(--w) * .75);transform:translateY(-50%);display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid var(--mut);border-radius:50%;background:var(--bg);color:var(--ink);cursor:pointer}
+#prev{left:0}
+#next{right:0}
+.arrow:disabled{opacity:.3;cursor:default}
+@media (hover:none){.arrow{display:none}}
+.count{margin:20px 0 0;text-align:center;font-size:.8rem}
+.empty{padding:48px 0;text-align:center}
+
+/* 리스트형 */
+.rows{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.th{flex:none;width:56px;aspect-ratio:2/3;border-radius:4px;overflow:hidden;background:var(--ph)}
+.th .ph{padding:4px;font-size:.7rem}
+.row .info{flex:1;min-width:0;font-size:.88rem}
+.row h2{margin:0;font-size:1rem;font-weight:700}
+.row .pill{flex:none;margin:0}
+
+@media (max-width:520px){
+  main{padding-top:20px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+  .login input{flex:1 1 40%;width:auto}
+  .row{flex-wrap:wrap}
+  .row .info{flex:1 1 0}
+  .row .pill{width:100%}
+}
+@media (prefers-reduced-motion:reduce){.poster,.t{transition:none}}
 </style>
 </head>
 <body>
 <main>
-  <header>
+  <header class="top">
     <h1>학기말 영화 상영</h1>
-    <p class="mut">보고 싶은 영화를 한 편 선택해 예매하세요. 예매 후에도 다른 영화로 바꿀 수 있습니다.</p>
+    <div class="who" id="userBar" hidden>
+      <strong id="who"></strong>
+      <button class="txt" id="logoutBtn" type="button">로그아웃</button>
+    </div>
   </header>
 
-  <form class="bar" id="loginForm">
+  <nav class="sub">
+    <span class="cur" aria-current="page">상영작</span>
+    <button class="txt" id="viewBtn" type="button">리스트형</button>
+  </nav>
+
+  <p class="lead mut">보고 싶은 영화를 한 편 선택해 예매하세요. 예매 후에도 다른 영화로 바꿀 수 있습니다.</p>
+
+  <form class="login" id="loginForm">
     <input id="sid" placeholder="학번" inputmode="numeric" autocomplete="username" aria-label="학번" required>
     <input id="code" placeholder="개인 코드" autocomplete="current-password" aria-label="개인 코드" required>
-    <button>로그인</button>
+    <button class="pill">로그인</button>
   </form>
-  <div class="bar" id="userBar" hidden>
-    <strong id="who"></strong>
-    <button class="line" id="logoutBtn" type="button">로그아웃</button>
-  </div>
-  <p id="msg" role="status"></p>
-  <ul id="list"></ul>
+
+  <p class="msg" id="msg" role="status"></p>
+  <div id="view"></div>
 </main>
 
 <script>
-const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // ← 배포한 Worker 주소로 교체
+const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // 배포한 Worker 주소
 const TEST_MODE = true; // 로그인 없이 테스트 (운영 때는 false)
 const newId = () => "test-" + Math.random().toString(36).slice(2, 7);
 let testUser = localStorage.getItem("testUser") || newId();
@@ -79,7 +129,12 @@ localStorage.setItem("testUser", testUser);
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let token = TEST_MODE ? "test" : localStorage.getItem("token");
+let items = [], mine = null, cur = 0, first = true, sig = "";
+let view = localStorage.getItem("view") === "list" ? "list" : "card";
+const smooth = () => (matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth");
+const CHEV = (d) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 
+// 서버 통신
 async function api(path, opts = {}) {
   const r = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}), ...(TEST_MODE ? { "X-Test-User": testUser } : {}) } });
   const d = await r.json().catch(() => ({}));
@@ -89,6 +144,7 @@ async function api(path, opts = {}) {
 }
 const say = (t) => ($("#msg").textContent = t);
 
+// 로그인 상태
 function showUser() {
   $("#loginForm").hidden = !!token;
   $("#userBar").hidden = !token;
@@ -99,21 +155,92 @@ function showUser() {
 }
 function logout(m = "") { ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; showUser(); load(); if (m) say(m); }
 
+// 공통 조각
+const poster = (s) => s.poster_url
+  ? `<img src="${esc(s.poster_url)}" alt="${esc(s.title)}" loading="lazy" draggable="false" onerror="phFix(this)">`
+  : `<span class="ph">${esc(s.title)}</span>`;
+function phFix(img) { const p = document.createElement("span"); p.className = "ph"; p.textContent = img.alt; img.replaceWith(p); }
+function meta(s) {
+  const m = mine === s.id, left = Math.max(s.remaining, 0);
+  const loc = [s.room, s.start_at].filter(Boolean).map(esc).join(`<i class="v"></i>`);
+  return `${loc ? `<p>${loc}</p>` : ""}<p class="seat${left <= 5 ? " low" : ""}">${m ? `<span class="ok">예매 완료</span><i class="v"></i>` : ""}남은 자리 ${left}/${s.capacity}</p>`;
+}
+function btn(s) {
+  const m = mine === s.id, full = s.remaining <= 0 && !m;
+  if (!token) return `<button class="pill" disabled>로그인 필요</button>`;
+  if (m) return `<button class="pill bad" onclick="cancelRes()">예매 취소</button>`;
+  return `<button class="pill" ${full ? "disabled" : ""} onclick="reserve(${s.id})">${full ? "매진" : mine !== null ? "이 영화로 변경" : "예매하기"}</button>`;
+}
+const desc = (s) => (s.description ? `<p class="desc">${esc(s.description)}</p>` : "");
+
+// 카드형 (가운데 포커스)
+function slide(s, i) {
+  const m = mine === s.id, full = s.remaining <= 0 && !m;
+  return `<li class="slide" data-i="${i}">
+    <button class="poster" type="button" onclick="go(${i})" aria-label="${esc(s.title)} 선택">
+      ${poster(s)}${m ? `<span class="tag ok">예매 완료</span>` : full ? `<span class="tag">매진</span>` : ""}<b class="no">${i + 1}</b>
+    </button>
+    <h2 class="t">${esc(s.title)}</h2>
+    <div class="more">${meta(s)}${desc(s)}${btn(s)}</div></li>`;
+}
+// 리스트형
+function row(s) {
+  return `<li class="row"><div class="th">${poster(s)}</div>
+    <div class="info"><h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}</div>${btn(s)}</li>`;
+}
+
+function render() {
+  $("#viewBtn").textContent = view === "list" ? "카드형" : "리스트형";
+  const box = $("#view");
+  if (!items.length) { box.innerHTML = `<p class="empty mut">아직 등록된 영화가 없습니다. 곧 공개됩니다.</p>`; return; }
+  if (view === "list") { box.innerHTML = `<ul class="rows">${items.map(row).join("")}</ul>`; return; }
+  box.innerHTML = `<div class="stage" role="region" aria-roledescription="carousel" aria-label="상영 영화">
+      <button class="arrow" id="prev" type="button" aria-label="이전 영화" onclick="go(cur - 1)">${CHEV("M15 5l-7 7 7 7")}</button>
+      <ul class="track" id="track" tabindex="0">${items.map(slide).join("")}</ul>
+      <button class="arrow" id="next" type="button" aria-label="다음 영화" onclick="go(cur + 1)">${CHEV("M9 5l7 7-7 7")}</button>
+    </div><p class="count mut" id="count"></p>`;
+  cur = Math.min(cur, items.length - 1);
+  const t = $("#track");
+  t.scrollLeft = left(cur);
+  t.addEventListener("scroll", onScroll, { passive: true });
+  t.onkeydown = (e) => {
+    if (e.key === "ArrowRight") { e.preventDefault(); go(cur + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); go(cur - 1); }
+  };
+  mark();
+}
+
+// 캐러셀 위치
+function left(i) { const t = $("#track"), el = t.children[i]; return el.offsetLeft + el.offsetWidth / 2 - t.clientWidth / 2; }
+function go(i) {
+  const t = $("#track"); if (!t) return;
+  t.scrollTo({ left: left(Math.max(0, Math.min(i, items.length - 1))), behavior: smooth() });
+}
+let tick = false;
+function onScroll() { if (tick) return; tick = true; requestAnimationFrame(() => { tick = false; mark(); }); }
+function mark() {
+  const t = $("#track"); if (!t) return;
+  const mid = t.scrollLeft + t.clientWidth / 2;
+  let best = 0, d = Infinity;
+  [...t.children].forEach((el, i) => { const x = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid); if (x < d) { d = x; best = i; } });
+  cur = best;
+  [...t.children].forEach((el, i) => el.classList.toggle("on", i === best));
+  $("#prev").disabled = best === 0;
+  $("#next").disabled = best === items.length - 1;
+  $("#count").textContent = (best + 1) + " / " + items.length;
+}
+
+// 데이터 갱신 (바뀐 게 없으면 다시 그리지 않음)
+function draw() {
+  const s = JSON.stringify([items, mine, view, !!token]);
+  if (s !== sig) { sig = s; render(); }
+}
 async function load() {
   try {
-    const { screenings, mine } = await api("/api/screenings");
-    $("#list").innerHTML = screenings.length ? screenings.map((s) => {
-      const isMine = mine === s.id, full = s.remaining <= 0 && !isMine;
-      const btn = !token ? "" : isMine
-        ? `<button class="bad" onclick="cancelRes()">예매 취소</button>`
-        : `<button ${full ? "disabled" : ""} onclick="reserve(${s.id})">${full ? "매진" : mine ? "이 영화로 변경" : "예매하기"}</button>`;
-      return `<li class="row ${isMine ? "mine" : ""}">
-        ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="${esc(s.title)} 포스터" loading="lazy">` : `<div class="thumb"></div>`}
-        <div class="info"><h2>${esc(s.title)}</h2>
-          <p class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", "))}</p>
-          <p class="desc">${esc(s.description)}</p></div>
-        <div class="act"><span class="seats">${isMine ? "예매 완료, " : ""}남은 자리 ${Math.max(s.remaining, 0)}/${s.capacity}</span>${btn}</div></li>`;
-    }).join("") : `<li class="row mut">아직 등록된 영화가 없습니다. 곧 공개됩니다.</li>`;
+    const d = await api("/api/screenings");
+    items = d.screenings; mine = d.mine;
+    if (first) { first = false; cur = Math.max(items.findIndex((s) => s.id === mine), 0); } // 처음엔 내 예매 영화를 가운데로
+    draw();
   } catch (e) { say(e.message); }
 }
 async function reserve(id) {
@@ -124,6 +251,9 @@ async function cancelRes() {
   try { await api("/api/reserve", { method: "DELETE" }); say("예매를 취소했습니다."); } catch (e) { say(e.message); }
   load();
 }
+
+// 이벤트
+$("#viewBtn").onclick = () => { view = view === "list" ? "card" : "list"; localStorage.setItem("view", view); draw(); };
 $("#loginForm").onsubmit = async (e) => {
   e.preventDefault();
   try {
