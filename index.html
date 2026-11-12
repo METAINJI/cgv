@@ -71,7 +71,7 @@ ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 </main>
 
 <script>
-const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // ← 배포한 Worker 주소로 교체
+const API = "https://movie-booking.계정명.workers.dev"; // ← 배포한 Worker 주소로 교체
 const TEST_MODE = true; // 로그인 없이 테스트 (운영 때는 false)
 const newId = () => "test-" + Math.random().toString(36).slice(2, 7);
 let testUser = localStorage.getItem("testUser") || newId();
@@ -136,7 +136,9 @@ $("#logoutBtn").onclick = () => {
   if (!TEST_MODE) return logout();
   testUser = newId(); localStorage.setItem("testUser", testUser); showUser(); load(); // 새 학생인 척 전환
 };
-showUser(); load(); setInterval(load, 10000);
+showUser(); load();
+setInterval(() => { if (!document.hidden) load(); }, 30000); // 화면이 보일 때만 30초마다 갱신 (DB 읽기 절약)
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 </script>
 </body>
 </html>
