@@ -7,38 +7,56 @@
 <title>관리자 대시보드</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--btn:#111827;--btn-ink:#fff;--bad:#b91c1c;--thumb:#f3f4f6}
-@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--btn:#e7e8ea;--btn-ink:#101114;--bad:#f87171;--thumb:#1b1d22}}
+:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--bad:#b91c1c;--ph:#2a2d34}
+@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--bad:#f87171;--ph:#1b1d22}}
 *{box-sizing:border-box}
-[hidden]{display:none!important} /* .bar 의 display:flex 가 hidden 속성을 덮어쓰던 문제 해결 */
-button,input,textarea{touch-action:manipulation}
-button,input{min-height:44px}
-main{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif}
-main{max-width:880px;margin:0 auto;padding:56px 24px 80px}
-h1{font-size:1.5rem;font-weight:700;margin:0 0 6px}
-h2{font-size:1.05rem;font-weight:700;margin:40px 0 12px}
-.mut{color:var(--mut)}
-input,textarea,button{font:inherit;border-radius:6px}
-input,textarea{padding:9px 12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
-label{display:block;font-size:.85rem;color:var(--mut);margin-bottom:4px}
-button{padding:8px 14px;border:1px solid var(--btn);background:var(--btn);color:var(--btn-ink);cursor:pointer;font-weight:500}
-button.line{background:none;color:var(--ink);border-color:var(--line)}
-button.bad{background:none;color:var(--bad);border-color:var(--bad)}
+main{max-width:880px;margin:0 auto;padding:32px max(24px,env(safe-area-inset-right)) 80px max(24px,env(safe-area-inset-left))}
+button,input,textarea{touch-action:manipulation}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0}
-.bar input{width:220px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px}
+.mut{color:var(--mut)}
+a{color:var(--mut);font-size:.88rem}
+a:hover{color:var(--ink)}
+
+/* 상단 */
+h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em;line-height:44px}
+.sub{margin-top:16px;border-bottom:1px solid var(--line)}
+.sub span{display:inline-block;padding:10px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
+.lead{margin:20px 0 0;font-size:.9rem}
+h2{margin:40px 0 12px;font-size:1.05rem;font-weight:700}
+#msg{min-height:1.6em;margin:16px 0 0;color:var(--mut);font-size:.88rem}
+
+/* 입력 */
+label{display:block;margin-bottom:2px;color:var(--mut);font-size:.82rem}
+input,textarea{width:100%;padding:9px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
+input{min-height:44px}
+textarea{resize:vertical}
+input:focus,textarea:focus{outline:none;border-bottom-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 24px;margin-bottom:8px}
 .full{grid-column:1/-1}
-#msg{min-height:1.7em;color:var(--mut);font-size:.9rem}
-ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-.item{display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
-.thumb{width:44px;aspect-ratio:2/3;object-fit:cover;border-radius:3px;background:var(--thumb);flex:none;display:block}
-.meta{flex:1;min-width:0;display:flex;flex-direction:column;font-size:.92rem}
+
+/* 버튼 */
+button{min-height:44px;padding:0 24px;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
+button.line{border-color:var(--line)}
+button.bad{border-color:var(--bad);color:var(--bad)}
+@media (hover:hover){
+  button:hover{background:var(--ink);color:var(--bg)}
+  button.bad:hover{background:var(--bad);color:var(--bg)}
+}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:16px 0}
+.bar input{width:240px}
+
+/* 영화 목록 */
+ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.item{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.thumb{display:block;flex:none;width:44px;aspect-ratio:2/3;border-radius:3px;background:var(--ph);object-fit:cover}
+.meta{display:flex;flex:1;flex-direction:column;min-width:0;font-size:.9rem}
 .meta strong{font-size:1rem;overflow-wrap:anywhere}
-.btns{display:flex;gap:8px;flex:none}
+.btns{display:flex;flex:none;gap:8px}
+
 @media (max-width:520px){
-  main{padding:32px 16px 56px}
+  main{padding-top:20px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
   .bar input{flex:1 1 100%;width:100%}
   #loginForm button{flex:1 1 100%}
   .item{flex-wrap:wrap}
@@ -50,7 +68,8 @@ ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 <body>
 <main>
   <h1>관리자 대시보드</h1>
-  <p class="mut">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
+  <nav class="sub"><span>영화 관리</span></nav>
+  <p class="lead mut">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
 
   <form class="bar" id="loginForm">
     <input id="pw" type="password" placeholder="관리자 비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" required>
@@ -81,7 +100,7 @@ ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 </main>
 
 <script>
-const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // ← index.html과 같은 Worker 주소
+const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // index.html과 같은 Worker 주소
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const FIELDS = ["title", "room", "start_at", "capacity", "poster_url", "description"];
