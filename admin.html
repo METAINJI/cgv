@@ -40,9 +40,10 @@ input:focus,textarea:focus{outline:none;border-bottom-color:var(--ink)}
 button{min-height:44px;padding:0 24px;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
 button.line{border-color:var(--line)}
 button.bad{border-color:var(--bad);color:var(--bad)}
+button:disabled,button.line:disabled,button.bad:disabled{border-color:var(--line);color:var(--mut);cursor:wait}
 @media (hover:hover){
-  button:hover{background:var(--ink);color:var(--bg)}
-  button.bad:hover{background:var(--bad);color:var(--bg)}
+  button:hover:not(:disabled){background:var(--ink);color:var(--bg)}
+  button.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
 }
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:16px 0}
 .bar input{width:240px}
@@ -107,6 +108,20 @@ const FIELDS = ["title", "room", "start_at", "capacity", "poster_url", "descript
 let pw = sessionStorage.getItem("adminPw") || "", data = [], editId = null; // 비밀번호는 탭을 닫으면 사라집니다
 const say = (t) => ($("#msg").textContent = t);
 
+// 처리 중 모든 버튼 잠금 (중복 클릭 방지)
+let busy = false;
+async function act(btn, label, fn) {
+  if (busy) return;
+  busy = true;
+  const old = btn.textContent, all = [...document.querySelectorAll("button")];
+  all.forEach((b) => (b.disabled = true));
+  btn.textContent = label;
+  try { await fn(); } catch (e) { say(e.message); }
+  all.forEach((b) => (b.disabled = false));
+  if (btn.textContent === label) btn.textContent = old;
+  busy = false;
+}
+
 async function api(path, opts = {}) {
   const r = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json", "X-Admin-Password": pw } });
   const d = await r.json().catch(() => ({}));
@@ -125,7 +140,7 @@ async function load() {
       <div class="meta"><strong>${esc(s.title)}</strong>
         <span class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", ")) || "반, 시간 미정"}</span>
         <span class="mut">예매 ${s.reserved}/${s.capacity}명</span></div>
-      <div class="btns"><button class="line" onclick="edit(${i})">수정</button><button class="bad" onclick="del(${i})">삭제</button></div></li>`).join("")
+      <div class="btns"><button class="line" onclick="edit(${i})">수정</button><button class="bad" onclick="del(${i}, this)">삭제</button></div></li>`).join("")
       : `<li class="item mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</li>`;
   } catch (e) { logout(e.message); }
 }
@@ -136,36 +151,39 @@ function edit(i) {
   $("#formTitle").textContent = "영화 수정"; $("#saveBtn").textContent = "저장"; $("#resetBtn").hidden = false;
   scrollTo({ top: 0, behavior: "smooth" });
 }
-async function del(i) {
+function del(i, btn) {
   const s = data[i];
   if (!confirm(`"${s.title}"을(를) 삭제할까요? 이 영화의 예매 ${s.reserved}건도 함께 삭제됩니다.`)) return;
-  try { await api("/api/admin/screenings/" + s.id, { method: "DELETE" }); say("삭제했습니다."); } catch (e) { say(e.message); }
-  load();
+  act(btn, "삭제 중...", async () => {
+    await api("/api/admin/screenings/" + s.id, { method: "DELETE" });
+    await load(); say("삭제했습니다.");
+  });
 }
-$("#f").onsubmit = async (e) => {
+$("#f").onsubmit = (e) => {
   e.preventDefault();
   const body = JSON.stringify(Object.fromEntries(FIELDS.map((k) => [k, $("#" + k).value])));
-  try {
-    await api(editId ? "/api/admin/screenings/" + editId : "/api/admin/screenings", { method: editId ? "PUT" : "POST", body });
-    say(editId ? "수정했습니다." : "등록했습니다."); resetForm(); load();
-  } catch (err) { say(err.message); }
+  const id = editId;
+  act($("#saveBtn"), id ? "저장 중..." : "등록 중...", async () => {
+    await api(id ? "/api/admin/screenings/" + id : "/api/admin/screenings", { method: id ? "PUT" : "POST", body });
+    resetForm(); await load(); say(id ? "수정했습니다." : "등록했습니다.");
+  });
 };
 $("#resetBtn").onclick = resetForm;
-$("#csvBtn").onclick = async () => {
-  try {
-    const { roster } = await api("/api/admin/roster");
-    const t = Object.fromEntries(data.map((s) => [s.id, s]));
-    const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = "영화,반,학번,이름\n" + roster.map((r) => [t[r.screening_id]?.title, t[r.screening_id]?.room, r.student_id, r.name].map(q).join(",")).join("\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv" })); a.download = "예매명단.csv"; a.click();
-  } catch (e) { say(e.message); }
-};
-$("#loginForm").onsubmit = async (e) => {
+$("#csvBtn").onclick = () => act($("#csvBtn"), "불러오는 중...", async () => {
+  const { roster } = await api("/api/admin/roster");
+  const t = Object.fromEntries(data.map((s) => [s.id, s]));
+  const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = "영화,반,학번,이름\n" + roster.map((r) => [t[r.screening_id]?.title, t[r.screening_id]?.room, r.student_id, r.name].map(q).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv" })); a.download = "예매명단.csv"; a.click();
+});
+$("#loginForm").onsubmit = (e) => {
   e.preventDefault();
-  pw = $("#pw").value; $("#pw").value = "";
-  await load();
-  if (!$("#panel").hidden) sessionStorage.setItem("adminPw", pw);
+  act($("#loginForm button"), "로그인 중...", async () => {
+    pw = $("#pw").value; $("#pw").value = "";
+    await load();
+    if (!$("#panel").hidden) sessionStorage.setItem("adminPw", pw);
+  });
 };
 $("#logoutBtn").onclick = () => logout();
 pw ? load() : show(false);
