@@ -10,17 +10,17 @@
 @media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--ok:#34d399;--bad:#f87171;--ph:#1b1d22}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
 main{max-width:960px;margin:0 auto;padding:32px max(24px,env(safe-area-inset-right)) 80px max(24px,env(safe-area-inset-left))}
 button,input{touch-action:manipulation}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .mut{color:var(--mut)}
 
 /* 상단 */
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
-h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em}
-.who{display:flex;align-items:center;gap:8px;font-size:.9rem}
-.txt{min-height:44px;padding:0 4px;border:0;background:none;color:var(--mut);font:inherit;font-size:.88rem;cursor:pointer}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:0 12px;min-height:44px}
+h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em;white-space:nowrap}
+.who{display:flex;flex-wrap:wrap;align-items:center;gap:0 12px;font-size:.9rem}
+.txt{min-height:44px;padding:0 4px;border:0;background:none;color:var(--mut);font:inherit;font-size:.88rem;cursor:pointer;white-space:nowrap}
 .txt:hover{color:var(--ink)}
 .sub{display:flex;justify-content:space-between;align-items:center;margin-top:16px;border-bottom:1px solid var(--line)}
 .cur{padding:10px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
@@ -34,7 +34,7 @@ h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em}
 .msg{min-height:1.6em;margin:20px 0 8px;text-align:center;color:var(--mut);font-size:.88rem}
 
 /* 버튼 */
-.pill{min-height:44px;margin-top:14px;padding:0 28px;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
+.pill{min-width:128px;min-height:44px;margin-top:14px;padding:0 28px;white-space:nowrap;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
 .pill.bad{border-color:var(--bad);color:var(--bad)}
 .pill:disabled{border-color:var(--line);color:var(--mut);cursor:not-allowed}
 .pill.wait:disabled{cursor:wait}
@@ -66,7 +66,9 @@ h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em}
 .seat.low{color:var(--bad)}
 .ok{color:var(--ok);font-weight:500}
 .desc{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:8px!important;color:var(--mut)}
-.v{display:inline-block;width:1px;height:.8em;margin:0 8px;background:var(--mut);opacity:.5;vertical-align:-1px}
+.line{display:flex;flex-wrap:wrap;justify-content:center;gap:0 14px}
+.line span{white-space:nowrap}
+.row .line{justify-content:flex-start}
 .arrow{position:absolute;z-index:2;top:calc(var(--w) * .75);transform:translateY(-50%);display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid var(--mut);border-radius:50%;background:var(--bg);color:var(--ink);cursor:pointer}
 #prev{left:0}
 #next{right:0}
@@ -130,7 +132,7 @@ localStorage.setItem("testUser", testUser);
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let token = TEST_MODE ? "test" : localStorage.getItem("token");
-let items = [], mine = null, cur = 0, first = true, sig = "";
+let items = [], mine = null, cur = 0, first = true, sig = "", shown = "";
 let view = localStorage.getItem("view") === "list" ? "list" : "card";
 const smooth = () => (matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth");
 const CHEV = (d) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -163,8 +165,8 @@ const poster = (s) => s.poster_url
 function phFix(img) { const p = document.createElement("span"); p.className = "ph"; p.textContent = img.alt; img.replaceWith(p); }
 function meta(s) {
   const m = mine === s.id, left = Math.max(s.remaining, 0);
-  const loc = [s.room, s.start_at].filter(Boolean).map(esc).join(`<i class="v"></i>`);
-  return `${loc ? `<p>${loc}</p>` : ""}<p class="seat${left <= 5 ? " low" : ""}">${m ? `<span class="ok">예매 완료</span><i class="v"></i>` : ""}남은 자리 ${left}/${s.capacity}</p>`;
+  const loc = [s.room, s.start_at].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join("");
+  return `${loc ? `<p class="line">${loc}</p>` : ""}<p class="line seat${left <= 5 ? " low" : ""}">${m ? `<span class="ok">예매 완료</span>` : ""}<span>남은 자리 ${left}/${s.capacity}</span></p>`;
 }
 function btn(s) {
   const m = mine === s.id, full = s.remaining <= 0 && !m;
@@ -175,11 +177,11 @@ function btn(s) {
 const desc = (s) => (s.description ? `<p class="desc">${esc(s.description)}</p>` : "");
 
 // 카드형 (가운데 포커스)
+const tagHtml = (s) => (mine === s.id ? `<span class="tag ok">예매 완료</span>` : s.remaining <= 0 ? `<span class="tag">매진</span>` : "");
 function slide(s, i) {
-  const m = mine === s.id, full = s.remaining <= 0 && !m;
-  return `<li class="slide" data-i="${i}">
+  return `<li class="slide${i === cur ? " on" : ""}" data-i="${i}">
     <button class="poster" type="button" onclick="go(${i})" aria-label="${esc(s.title)} 선택">
-      ${poster(s)}${m ? `<span class="tag ok">예매 완료</span>` : full ? `<span class="tag">매진</span>` : ""}<b class="no">${i + 1}</b>
+      ${poster(s)}<span class="tagbox">${tagHtml(s)}</span><b class="no">${i + 1}</b>
     </button>
     <h2 class="t">${esc(s.title)}</h2>
     <div class="more">${meta(s)}${desc(s)}${btn(s)}</div></li>`;
@@ -192,15 +194,16 @@ function row(s) {
 
 function render() {
   $("#viewBtn").textContent = view === "list" ? "카드형" : "리스트형";
+  shown = key();
   const box = $("#view");
   if (!items.length) { box.innerHTML = `<p class="empty mut">아직 등록된 영화가 없습니다. 곧 공개됩니다.</p>`; return; }
   if (view === "list") { box.innerHTML = `<ul class="rows">${items.map(row).join("")}</ul>`; return; }
+  cur = Math.min(cur, items.length - 1);
   box.innerHTML = `<div class="stage" role="region" aria-roledescription="carousel" aria-label="상영 영화">
       <button class="arrow" id="prev" type="button" aria-label="이전 영화" onclick="go(cur - 1)">${CHEV("M15 5l-7 7 7 7")}</button>
       <ul class="track" id="track" tabindex="0">${items.map(slide).join("")}</ul>
       <button class="arrow" id="next" type="button" aria-label="다음 영화" onclick="go(cur + 1)">${CHEV("M9 5l7 7-7 7")}</button>
     </div><p class="count mut" id="count"></p>`;
-  cur = Math.min(cur, items.length - 1);
   const t = $("#track");
   t.scrollLeft = left(cur);
   t.addEventListener("scroll", onScroll, { passive: true });
@@ -232,9 +235,25 @@ function mark() {
 }
 
 // 데이터 갱신 (바뀐 게 없으면 다시 그리지 않음)
+const key = () => view + JSON.stringify(items.map(({ remaining, ...r }) => r)); // 남은 자리 외 정보
+function patch() { // 영화 목록이 같으면 화면을 새로 만들지 않고 내용만 갱신 (애니메이션·깜빡임 방지)
+  const els = $("#track") ? $("#track").children : document.querySelectorAll(".rows .row");
+  items.forEach((s, i) => {
+    const el = els[i];
+    if (view === "card") {
+      el.querySelector(".tagbox").innerHTML = tagHtml(s);
+      el.querySelector(".more").innerHTML = meta(s) + desc(s) + btn(s);
+    } else {
+      el.querySelector(".info").innerHTML = `<h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}`;
+      el.querySelector(".pill").outerHTML = btn(s);
+    }
+  });
+}
 function draw() {
   const s = JSON.stringify([items, mine, view, !!token]);
-  if (s !== sig) { sig = s; render(); }
+  if (s === sig) return;
+  sig = s;
+  if (items.length && shown === key() && $("#track, .rows")) patch(); else render();
 }
 async function load() {
   if (busy) return; // 처리 중에는 자동 갱신 건너뜀
