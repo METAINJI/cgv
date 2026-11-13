@@ -37,6 +37,7 @@ h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em}
 .pill{min-height:44px;margin-top:14px;padding:0 28px;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
 .pill.bad{border-color:var(--bad);color:var(--bad)}
 .pill:disabled{border-color:var(--line);color:var(--mut);cursor:not-allowed}
+.pill.wait:disabled{cursor:wait}
 @media (hover:hover){
   .pill:hover:not(:disabled){background:var(--ink);color:var(--bg)}
   .pill.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
@@ -168,8 +169,8 @@ function meta(s) {
 function btn(s) {
   const m = mine === s.id, full = s.remaining <= 0 && !m;
   if (!token) return `<button class="pill" disabled>로그인 필요</button>`;
-  if (m) return `<button class="pill bad" onclick="cancelRes()">예매 취소</button>`;
-  return `<button class="pill" ${full ? "disabled" : ""} onclick="reserve(${s.id})">${full ? "매진" : mine !== null ? "이 영화로 변경" : "예매하기"}</button>`;
+  if (m) return `<button class="pill bad" onclick="cancelRes(this)">예매 취소</button>`;
+  return `<button class="pill" ${full ? "disabled" : ""} onclick="reserve(${s.id}, this)">${full ? "매진" : mine !== null ? "이 영화로 변경" : "예매하기"}</button>`;
 }
 const desc = (s) => (s.description ? `<p class="desc">${esc(s.description)}</p>` : "");
 
@@ -236,6 +237,7 @@ function draw() {
   if (s !== sig) { sig = s; render(); }
 }
 async function load() {
+  if (busy) return; // 처리 중에는 자동 갱신 건너뜀
   try {
     const d = await api("/api/screenings");
     items = d.screenings; mine = d.mine;
@@ -243,24 +245,38 @@ async function load() {
     draw();
   } catch (e) { say(e.message); }
 }
-async function reserve(id) {
-  try { await api("/api/reserve", { method: "POST", body: JSON.stringify({ screeningId: id }) }); say("예매가 완료되었습니다."); } catch (e) { say(e.message); }
-  load();
+// 처리 중 버튼 잠금 (중복 클릭 방지)
+let busy = false;
+async function act(btn, label, fn) {
+  if (busy) return;
+  busy = true;
+  const old = btn.textContent;
+  document.querySelectorAll(".pill").forEach((b) => (b.disabled = true));
+  btn.textContent = label; btn.classList.add("wait");
+  try { await fn(); } catch (e) { say(e.message); }
+  busy = false; sig = "";
+  await load();
+  draw(); // 통신 실패로 목록이 안 그려진 경우 대비
+  btn.textContent = old; btn.classList.remove("wait"); btn.disabled = false;
 }
-async function cancelRes() {
-  try { await api("/api/reserve", { method: "DELETE" }); say("예매를 취소했습니다."); } catch (e) { say(e.message); }
-  load();
-}
+const reserve = (id, btn) => act(btn, "예매 중...", async () => {
+  await api("/api/reserve", { method: "POST", body: JSON.stringify({ screeningId: id }) });
+  say("예매가 완료되었습니다.");
+});
+const cancelRes = (btn) => act(btn, "취소 중...", async () => {
+  await api("/api/reserve", { method: "DELETE" });
+  say("예매를 취소했습니다.");
+});
 
 // 이벤트
 $("#viewBtn").onclick = () => { view = view === "list" ? "card" : "list"; localStorage.setItem("view", view); draw(); };
-$("#loginForm").onsubmit = async (e) => {
+$("#loginForm").onsubmit = (e) => {
   e.preventDefault();
-  try {
+  act($("#loginForm button"), "로그인 중...", async () => {
     const d = await api("/api/login", { method: "POST", body: JSON.stringify({ studentId: $("#sid").value, code: $("#code").value }) });
     token = d.token; localStorage.setItem("token", token); localStorage.setItem("name", d.name);
-    showUser(); say(""); load();
-  } catch (err) { say(err.message); }
+    showUser(); say("");
+  });
 };
 $("#logoutBtn").onclick = () => {
   if (!TEST_MODE) return logout();
